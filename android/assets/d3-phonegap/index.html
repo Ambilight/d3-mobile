@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>d3.ru mobile for android (unofficial)</title>
+    <!--
+    <script src="http://debug.phonegap.com/target/target-script-min.js#1412314"></script>
+    -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="cleartype" content="on">
+    
+    <link rel="stylesheet" href="http://meyerweb.com/eric/tools/css/reset/reset.css">
+  	<link rel="stylesheet" href="http://d3.ru/static/cache/all.css?bac4c9fc">
+    
+    <style>
+    	
+    	#content {
+    		position: absolute:
+    		top: 0px;
+    		left: 0px;
+    		
+    		width: 100%;
+    		height: 100%;
+    		
+    		padding: 2em;
+    	}
+    	
+    	#content > * {
+    		width: 70%;
+    		overflow-x: hidden;
+    		overflow-y: hidden;
+    	}
+    	
+    	body {
+    		overflow-y: hidden;
+    		overflow-x: hidden;
+    	}
+    	
+    	a {
+    		color: #556e8c; 
+    	}
+    	
+    	body {
+    		font-family: sans-serif;
+    	}
+    	
+    	.top {
+    		width: 100%;
+    		text-align: center;
+    		padding-top: 2em;
+    	}
+    	
+    	.top a {
+    		text-decoration: none;
+    	}
+    	
+    	.top ul {
+    		width: 100%;
+    		display: table;
+    	}
+    	
+    	.top li {
+    		display: table-cell;
+    		vertical-align: middle;
+    	}
+    	
+    	.login {
+    		
+    	}
+    	
+    	.blogs {
+    		
+    	}
+    	
+    	.filter {
+    		width: 100%;
+    		text-align: center;
+    		padding-top: 2em;	
+    		margin-bottom: 3em;
+    	}
+    	
+    	.filter ul {
+    		width: 100%;
+    		text-align: center;
+    	}
+    	
+    	.filter li {
+    		display: inline-block;
+    		vertical-align: middle;
+    		padding: 0.4em;
+    	}
+    	
+    	.active {
+    		background-color: #556E8C;
+    		border-radius: 4px;
+    	}
+    	
+    	.active a {
+    		color: #F4F5F5;
+    		text-decoration: none;
+    	}
+    	
+    </style>
+    
+    <script src="assets/quo_2.js"></script>
+    <script src="assets/signals.js"></script>
+    <script src="assets/crossroads.js"></script>
+    
+</head>
+
+<body id="d3">
+	<nav class='top'>
+		<ul>
+			<li class='login'>
+				<a href='#login'>Логин?</a>
+			</li>
+			<li class="logo">
+				<a href='#refresh'>
+					<img src="http://d3.ru/static/cache/i/logo_retina.png?d2bc8932">
+				</a>
+			</li>			
+			<li class="blogs">
+				<a href='#blogs/imperial'>Сайты</a>
+			</li>
+		</ul>
+	</nav>
+	<nav class="filter">
+		<ul>
+			<li class="imperial">
+				<a href="#d3.ru/imperial">Популярное</a>
+			</li>
+			<li class="new">
+				<a href="#d3.ru/new">Новое</a>
+			</li>
+			<li class="best">
+				<a href="#d3.ru/best">Лучшее</a>
+			</li>
+		</ul>
+	</nav>
+	<section class="page" id="blog"></section>
+	<section class="page" id="post"></section>
+	<section class="page" id="login">
+		
+		<div>
+			<h2>Увы и ах</h2>
+			<p>Это очень ранний прототип, поэтому логинится пока что нельзя.</p>
+			<p>И, судя по всему, нельзя будет вообще, поэтому вскоре кнопка будет заменена на цитаты.</p>
+		</div>
+		
+	</section>
+	<section class="page" id="blogs"></section>
+	
+	<script>
+		
+		var cleanActive = function () {
+			$$ ('.active').removeClass ('active');
+			return $$.apply (this, arguments);
+		};
+		
+		var pages = {
+			_pages: {},
+			exitAll: function () {
+				for (var p in pages._pages) pages._pages[p].exit ();
+			},
+			clearAll: function () {
+				$$ ('.page').html ('');
+			},
+			active: null
+		};
+		var enterPage = function (self) {
+			console.log ('enter page '+(this||self).id);
+			if (pages._pages.active && pages._pages.active !== this||self) pages._pages.active[0].exit ();
+			var self = $$(self||this).show ();
+			self.active = true;
+			pages._pages.active = self;
+			self.trigger ('enter');
+			addEventListener('scroll', self[0]._onscroll);
+		};
+		var exitPage = function (self) {
+			var self = $$(self || this).hide();
+			self.active = false;
+			pages._pages.active = self;
+			self.trigger ('exit');
+			removeEventListener ('scroll', self[0]._onscroll);
+		};
+		var clearPage = function (self) {
+			var self = $$(self||this).clear ();
+			self.trigger ('clear');
+		};
+		
+		var onscrollPage = function (){
+			if (document.body.scrollHeight - (window.innerHeight+window.scrollY) <= window.innerHeight) {
+				if (this.onscrollend) this.onscrollend ();
+			};
+		};
+		
+		$$ ('.page').forEach (function (page) {
+			pages._pages[page.id] = pages[page.id] = page;
+			page.exit = exitPage.bind (page);
+			page.enter = enterPage.bind (page);
+			page.clear = clearPage.bind (page);
+			page.active = false;
+			page._onscroll = onscrollPage.bind (page); 
+			page.onscrollend = null;
+		});
+		
+		pages.exitAll ();
+		
+		pages.blogs.onscrollend = function () {
+			goto.offset ($$('#blogs').data('offset'));
+		}
+		
+		pages.blog.onscrollend = function () {
+			goto.offset ($$('#blog').data('offset'));
+		}
+		
+		var routingHandlers = {
+			blogHandler: function (blog, filter, offset) {
+				console.log ('routingHandlers::blogHandler ('+blog+', '+filter+', '+offset+')');
+				cleanActive ('.'+(filter || 'imperial')).addClass ('active');
+				$$ ('.imperial a').attr ('href', '#'+blog+'/imperial');
+				$$ ('.new a').attr ('href', '#'+blog+'/new');
+				$$ ('.best a').attr ('href', '#'+blog+'/best');
+				if (!offset) pages.blog.enter ();
+				
+
+				$$.post ('http://'+blog+'/ajax/index/moar/', {
+					type: filter||'imperial',
+					offset: offset||0,
+					threshold: 'disable'
+				}, function (json) {
+					$blog = $$('#blog');
+					if (!offset)  $blog.html (json.template);
+					else $blog.html ($blog.html() + json.template);
+					$blog.data('offset', json.offset);
+				});
+			}
+		}
+		
+		var routes = {
+			login: crossroads.addRoute ('/login', function () {
+				cleanActive ('.login').addClass ('active');
+				pages.login.enter ();
+			}, 1),
+			blogs: crossroads.addRoute ('/blogs/:filter:/:offset:', function (filter, offset) {
+				cleanActive ('.blogs').addClass ('active');
+				$$('.filter').hide ();
+				$$('.imperial a').attr ('href', '#blogs/imperial');
+				$$('.new a').attr ('href', '#blogs/new');
+				$$('.best a').attr ('href', '#blogs/best');
+				pages.blogs.enter ();
+				
+				if (offset !== 'end')
+					$$.post ('http://d3.ru/ajax/domains/', {
+						offset: offset||0
+					}, function (json) {
+						$blogs = $$('#blogs');
+						if (json.offset != $blogs.data('offset')) $blogs.data ('offset', json.offset);
+						if (filter) $$('.'+filter).addClass ('active');
+						$blogs.html ($blogs.html()+json.template);
+					});
+				
+			}, 3),
+			blog: crossroads.addRoute ('/{blog}/:filter:/', routingHandlers.blogHandler, 2),
+			blogContinue: crossroads.addRoute ('/{blog}/{filter}/{offset}', routingHandlers.blogHandler , 2), 
+			comments: crossroads.addRoute ('/{blog}/comments/{post}', function (blog, post) {
+				pages.post.enter ();
+			})
+		};
+	
+	
+		var goto = function (url) {
+			console.log ('goto', url);
+			var url = url[0] === "#" ? url.slice(1) : url;
+			window.location.hash = url;
+			crossroads.parse (url);
+		};
+		goto.offset = function (offset) {
+			var hash = window.location.hash.split ('/');
+			hash[2] =  offset;
+			goto (hash.join('/'));
+		};
+		
+		$$ ('a').tap (function (event) {
+			console.log ('tap', arguments);
+			event.preventDefault ();
+			var url = event.target.href.split('#')[1] || event.target.hostname;
+			goto (url);
+		});
+		
+		routes.login.switched.add (function () {
+			
+		});
+		
+		routes.blogs.switched.add (function () {
+			$$('.filter').show ();
+		});
+		
+		routes.blog.switched.add (function () {
+			
+		});
+		
+		routes.comments.switched.add (function () {
+			
+		});
+		
+	</script>
+	
+</body>
+</html>
