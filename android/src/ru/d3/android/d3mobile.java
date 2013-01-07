@@ -29,7 +29,7 @@ public class d3mobile extends DroidGap
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        super.loadUrl("file:///android_asset/d3/index.html");
+        super.loadUrl("file:///android_asset/d3-phonegap/index.html");
     }
 }
 
